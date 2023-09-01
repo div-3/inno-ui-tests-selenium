@@ -3,12 +3,10 @@ package ru.inno.labirint;
 import io.github.bonigarcia.seljup.SeleniumJupiter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -22,7 +20,7 @@ import static org.openqa.selenium.By.cssSelector;
 public class LabirintUITest {
 
     @Test
-    public void byuJavaBooks(ChromeDriver browser) throws InterruptedException {
+    public void buyJavaBooks(ChromeDriver browser) throws InterruptedException {
 
         //Установка неявного ожидания для всех команд 4 секунды
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
@@ -46,10 +44,19 @@ public class LabirintUITest {
         //6. Добавить все товары на странице в корзину (кнопка Купить)
 //        Thread.sleep(5000);   //Просто подождать 5 секунд до появления кнопок "В корзину"
 
-        //Или включить явное ожидание появления кнопки "В корзину". Считаем, что все кнопки появляются одновременно
+        //Или
+        //Отключение неявного ожидания
+        Duration d = browser.manage().timeouts().getImplicitWaitTimeout();
+        browser.manage().timeouts().implicitlyWait(Duration.ZERO);
+
+        //Включение явного ожидания появления кнопки "В корзину". Считаем, что все кнопки появляются одновременно
         WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(15));
         wait.withMessage("Не дождались инициализации кнопок \"В корзину\"!")
                 .until(ExpectedConditions.stalenessOf(browser.findElement(cssSelector(".btn-tocart.buy-link"))));
+
+        //Включение неявного ожидания
+        browser.manage().timeouts().implicitlyWait(d);
+
 
         //Получение списка кнопок "В корзину"
         List<WebElement> buyButtons = browser.findElements(cssSelector(".btn-tocart.buy-link"));
@@ -59,25 +66,20 @@ public class LabirintUITest {
             element.click();
         }
 
-        //Сравнение количества нажатий на кнопку купить и итогового количества книг в корзине
+        //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
+
         //Просто подождать пока корзина обновится
         Thread.sleep(5000);
 
-        //Или явное ожидание
+        //Или явное ожидание.
+        //Но не подойдёт, т.к. мы принудительно дожидаемся когда значение в корзине будет равно требуемому. А если оно через секунду будет больше?
+//        wait.withMessage("Счётчик товаров в пиктограмме корзины не достиг нужного значения.")
+//                .until(ExpectedConditions.textToBe(cssSelector(".b-header-b-personal-e-icon-count-m-cart.basket-in-cart-a"), String.valueOf(buyButtons.size())));
 
+        //Получение счётчика товаров в корзине
         int cartCounter = Integer.parseInt(browser.findElement(cssSelector(".b-header-b-personal-e-icon-count-m-cart.basket-in-cart-a")).getText());
 
-
+        //Проверка счётчика
         assertEquals(buyButtons.size(), cartCounter);
-//        b-header-b-personal-e-icon-count-m-cart basket-in-cart-a      - счётчик на корзине
-//        _btn btn-tocart buy-link      - кнопка купить
-//        data-carttext=""
-
-
-
-
-
-
-        System.out.println("END TEST");
     }
 }
