@@ -6,6 +6,7 @@ import io.github.bonigarcia.seljup.SeleniumJupiter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 
@@ -47,6 +48,24 @@ public class HerokuappTest {
         deleteBtnByCss = browser.findElements(By.cssSelector("button.added-manually"));
         assertEquals(0, deleteBtnByCss.size());
     }
+
+    //2. Basic Auth (user and pass: admin)
+    @Test
+    public void basicAuthTest(ChromeDriver browser){
+        browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
+        String login = "admin";
+        String password = "admin";
+
+        //Basic authorization with login/path credentials using URL (https://www.browserstack.com/guide/handling-login-popups-in-selenium-webdriver-and-java)
+        browser.get("https://" + login + ":" + password + "@" + "the-internet.herokuapp.com" + "/basic_auth");
+
+        //Check successful authorization
+        String text = browser.findElement(By.xpath("//div[contains(@class,'example')]/p")).getText();
+        String success = "Congratulations! You must have the proper credentials.";
+        assertEquals(success, text);
+    }
+
+
 
 
 }
