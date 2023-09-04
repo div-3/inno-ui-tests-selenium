@@ -178,6 +178,15 @@ public class HerokuappTest {
         //TODO: Find the solution to get the text from canvas.
     }
 
+    //5. Checkboxes
+    @Test
+    public void checkboxesTest(ChromeDriver browser){
+        browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
+        browser.get(BASE_URL + "/checkboxes");
+
+
+    }
+
 
 
 
