@@ -65,6 +65,27 @@ public class HerokuappTest {
         assertEquals(success, text);
     }
 
+    //3. Broken Images
+    //TODO: Learn JS-script to check the images
+    @Test
+    public void brokenImagesTest(ChromeDriver browser){
+        browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
+        browser.get(BASE_URL + "/broken_images");
+        WebElement img1 = browser.findElement(By.xpath("//div[contains(@class,'example')]/img[1]"));
+        System.out.println(img1.getAttribute("File size"));
+        String src1 = img1.getAttribute("src");
+        System.out.println(src1);
+        browser.get(src1);
+
+        WebElement img2 = browser.findElement(By.xpath("//div[contains(@class,'example')]/img[2]"));
+        System.out.println(img2.getAttribute("File size"));
+
+        WebElement img3 = browser.findElement(By.xpath("//div[contains(@class,'example')]/img[3]"));
+        System.out.println(img3.getAttribute("File size"));
+
+
+    }
+
 
 
 
