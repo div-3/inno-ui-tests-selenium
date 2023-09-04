@@ -9,11 +9,15 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 @ExtendWith(SeleniumJupiter.class)
 public class HerokuappTest {
@@ -85,6 +89,96 @@ public class HerokuappTest {
 
 
     }
+
+    //4. Challenging DOM
+    @Test
+    public void challengingDOMTest(ChromeDriver browser) throws InterruptedException {
+        browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
+        browser.get(BASE_URL + "/challenging_dom");
+
+        /*-------------------------------------------------------------
+        * Work with TABLE
+        * -------------------------------------------------------------*/
+
+        //Get first table header
+        String header = browser
+                .findElement(By.xpath("//div[contains(@class,'large-10 columns')]"))    //Catch the div with table
+                .findElement(By.xpath("//thead/tr/th[1]")).getText();
+        System.out.println(header);
+
+        //Get all table headers
+        List<WebElement> headers = browser
+                .findElement(By.xpath("//div[contains(@class,'large-10 columns')]"))    //Catch the div with table
+                .findElements(By.xpath("//thead/tr/th"));
+        List<String> headersText = new ArrayList<>();
+        for (WebElement e: headers) {
+            headersText.add(e.getText());
+        }
+        System.out.println(headersText);
+
+        //Get any text element by its row/column coordinates within the table
+        int rowForElement = 9;
+        int columnForElement = 5;
+        WebElement tableElement = browser
+                .findElement(By.xpath("//div[contains(@class,'large-10 columns')]"))    //Catch the div with table
+                .findElement(By.xpath("//tr[" + rowForElement + "]/td[" + columnForElement + "]"));
+        System.out.println(tableElement.getText());
+
+        //Get any edit element by its row coordinates within the table
+        int rowForEdit = 2;
+        WebElement editElement = browser
+                .findElement(By.xpath("//div[contains(@class,'large-10 columns')]"))    //Catch the div with table
+                .findElement(By.xpath("//tr[" + rowForEdit + "]/td/a[@href='#edit']"));
+        System.out.println(editElement.getText());
+
+        //Get any delete element by its row coordinates within the table
+        int rowForDelete = 3;
+        WebElement deleteElement = browser
+                .findElement(By.xpath("//div[contains(@class,'large-10 columns')]"))    //Catch the div with table
+                .findElement(By.xpath("//tr[" + rowForDelete + "]/td/a[@href='#delete']"));
+        System.out.println(deleteElement.getText());
+
+
+        /*-------------------------------------------------------------
+         * Work with BUTTONS
+         * -------------------------------------------------------------*/
+
+        //Get blue button
+        WebElement blueButton = browser.findElement(By.cssSelector("a[class='button']"));
+        System.out.println(blueButton.getText());
+        blueButton.click();
+
+        blueButton = browser.findElement(By.cssSelector("a[class='button']"));
+        System.out.println(blueButton.getText());
+
+        //Get alert button
+        WebElement alertButton = browser.findElement(By.cssSelector("a.button.alert"));
+        System.out.println(alertButton.getText());
+        alertButton.click();
+
+        alertButton = browser.findElement(By.cssSelector("a.button.alert"));
+        System.out.println(alertButton.getText());
+
+        //Get success button
+        WebElement successButton = browser.findElement(By.cssSelector("a.button.success"));
+        System.out.println(successButton.getText());
+        successButton.click();
+
+        successButton = browser.findElement(By.cssSelector("a.button.success"));
+        System.out.println(successButton.getText());
+
+
+        /*-------------------------------------------------------------
+         * Work with CANVAS
+         * -------------------------------------------------------------*/
+
+        //Get canvas text
+        WebElement canvas = browser.findElement(By.cssSelector("#canvas"));
+        System.out.println(canvas.getText());   //There is no simple solution
+        //TODO: Find the solution to get the text from canvas.
+    }
+
+
 
 
 
