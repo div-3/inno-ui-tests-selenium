@@ -9,6 +9,9 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import ru.inno.labirint.block.SortOption;
+import ru.inno.labirint.page.MainPage;
+import ru.inno.labirint.page.SearchResultPage;
 
 import java.time.Duration;
 import java.util.List;
@@ -25,21 +28,18 @@ public class LabirintUITest {
         //Установка неявного ожидания для всех команд 4 секунды
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
 
-        //1. Открытие страницы
-        browser.get("https://www.labirint.ru/");
+        MainPage mainPage = new MainPage(browser);
 
+        //1. Открытие страницы
         //2. Скрыть плашку с cookies
-        // Установка cookie для отключения показа плашки "Принять Cookie"
-        Cookie cookiePolicy = new Cookie("cookie_policy", "1");
-        browser.manage().addCookie(cookiePolicy);
-        browser.navigate().refresh();
+        mainPage.open();
 
         //3. В поисковую строку написать `Java`
         //4. Выполнить поиск
-        browser.findElement(cssSelector("#search-field")).sendKeys("Java", Keys.RETURN);
+        SearchResultPage searchResultPage = mainPage.getHeader().search("Java");
 
         //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
-        browser.findElement(cssSelector("[data-event-content='высокий рейтинг']")).submit();
+        searchResultPage.changeSort(SortOption.HIGH_RATE);
 
         //6. Добавить все товары на странице в корзину (кнопка Купить)
 //        Thread.sleep(5000);   //Просто подождать 5 секунд до появления кнопок "В корзину"
