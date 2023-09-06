@@ -9,6 +9,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import ru.inno.labirint.block.BookCard;
+import ru.inno.labirint.block.Chips;
 import ru.inno.labirint.block.SortOption;
 import ru.inno.labirint.page.MainPage;
 import ru.inno.labirint.page.SearchResultPage;
@@ -22,24 +24,29 @@ import static org.openqa.selenium.By.cssSelector;
 @ExtendWith(SeleniumJupiter.class)
 public class LabirintUITest {
 
+
     @Test
-    public void buyJavaBooks(ChromeDriver browser) throws InterruptedException {
+    public void buyJavaBooksManual(ChromeDriver browser) throws InterruptedException {
 
         //Установка неявного ожидания для всех команд 4 секунды
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
 
-        MainPage mainPage = new MainPage(browser);
-
         //1. Открытие страницы
+        browser.get("https://www.labirint.ru/");
+
         //2. Скрыть плашку с cookies
-        mainPage.open();
+        // Установка cookie для отключения показа плашки "Принять Cookie"
+        Cookie cookiePolicy = new Cookie("cookie_policy", "1");
+        browser.manage().addCookie(cookiePolicy);
+        browser.navigate().refresh();
 
         //3. В поисковую строку написать `Java`
         //4. Выполнить поиск
-        SearchResultPage searchResultPage = mainPage.getHeader().search("Java");
+        browser.findElement(cssSelector("#search-field")).sendKeys("Java", Keys.RETURN);
 
         //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
-        searchResultPage.changeSort(SortOption.HIGH_RATE);
+        browser.findElement(cssSelector("span.sorting-items")).click();
+        browser.findElement(cssSelector("[data-event-content='высокий рейтинг']")).click();
 
         //6. Добавить все товары на странице в корзину (кнопка Купить)
 //        Thread.sleep(5000);   //Просто подождать 5 секунд до появления кнопок "В корзину"
@@ -81,5 +88,46 @@ public class LabirintUITest {
 
         //Проверка счётчика
         assertEquals(buyButtons.size(), cartCounter);
+    }
+
+    @Test
+    public void buyJavaBooksPageObject(ChromeDriver browser) throws InterruptedException {
+        //Установка неявного ожидания для всех команд 4 секунды
+        browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
+
+        MainPage mainPage = new MainPage(browser);
+
+        //1. Открытие страницы
+        //2. Скрыть плашку с cookies
+        mainPage.open();
+
+        //3. В поисковую строку написать `Java`
+        //4. Выполнить поиск
+        SearchResultPage searchResultPage = mainPage.getHeader().search("Java");
+
+        //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
+        searchResultPage.changeSort(SortOption.HIGH_RATE);
+
+        //6. Добавить все товары на странице в корзину (кнопка Купить)
+        //Получение списка кнопок "В корзину"
+        List<BookCard> books = searchResultPage
+                .closeChips(Chips.PREORDER)
+                .closeChips(Chips.AWAITING)
+                .closeChips(Chips.NOT_AVAILABLE)
+                .getAllBooks();
+
+        for (BookCard book : books) {
+            book.addToCart();
+        }
+
+        //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
+        //Получение счётчика товаров в корзине
+        int cartCounter =searchResultPage
+                .getHeader()
+                .awaitCartCounterToBe(books.size())
+                .getCartCounter();
+
+        //Проверка счётчика
+        assertEquals(books.size(), cartCounter);
     }
 }

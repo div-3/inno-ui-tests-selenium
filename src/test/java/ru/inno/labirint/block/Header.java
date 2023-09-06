@@ -3,9 +3,12 @@ package ru.inno.labirint.block;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import ru.inno.labirint.page.SearchResultPage;
 
+import static java.time.Duration.ofSeconds;
 import static org.openqa.selenium.By.cssSelector;
+import static org.openqa.selenium.support.ui.ExpectedConditions.textToBe;
 
 public class Header {
     private final WebDriver driver;
@@ -20,4 +23,17 @@ public class Header {
         driver.findElement(SEARCH_INPUT_LOCATOR).sendKeys(text, Keys.RETURN);
         return new SearchResultPage(driver);
     }
+
+    public Header awaitCartCounterToBe(int number) {
+        //TODO: переделать EC для ожидания отсутствия изменений в корзине в течении 3 секунд
+        new WebDriverWait(driver, ofSeconds(5))
+                .until(textToBe(cssSelector(".basket-in-cart-a"), Integer.toString(number)));
+        return this;
+    }
+
+    public int getCartCounter() {
+        String text = driver.findElement(cssSelector(".basket-in-cart-a")).getText();
+        return Integer.parseInt(text);
+    }
+
 }
