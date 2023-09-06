@@ -1,14 +1,25 @@
 package ru.inno.labirint;
 
 import io.github.bonigarcia.seljup.SeleniumJupiter;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junitpioneer.jupiter.cartesian.ArgumentSets;
+import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import ru.inno.factory.DriverType;
+import ru.inno.factory.WebDriverFactory;
 import ru.inno.labirint.block.BookCard;
 import ru.inno.labirint.block.Chips;
 import ru.inno.labirint.block.SortOption;
@@ -16,13 +27,23 @@ import ru.inno.labirint.page.MainPage;
 import ru.inno.labirint.page.SearchResultPage;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.openqa.selenium.By.cssSelector;
 
+@DisplayName("UI-тесты labirint.ru:")
 @ExtendWith(SeleniumJupiter.class)
 public class LabirintUITest {
+    private static List<WebDriver> openedBrowsers = new ArrayList<>();
+
+    @AfterAll
+    public static void clear(){
+        for (WebDriver b: openedBrowsers) {
+            b.quit();
+        }
+    }
 
 
     @Test
@@ -129,5 +150,92 @@ public class LabirintUITest {
 
         //Проверка счётчика
         assertEquals(books.size(), cartCounter);
+    }
+
+    /*Напишите фабрику WebDriver'ов
+    Шаги:
+    1. Изучите паттерн Фабрика (https://vertex-academy.com/tutorials/ru/pattern-factory-java/ или
+    https://progery.ru/pattern-fabrika-java)
+    2. Напишите класс WebDriverFactory:
+    - Фабрика предоставляет два метода getDriver(String name) и getDriver(String name, String... args)
+    - Первый метод создает новый веб-драйвер (какой именно - определяется из name)
+    - Второй метод также создает драйвер, но запускает его с параметрами, которые были переданы в args)
+    3. Доработайте ваш тест на Лабиринт (или любой другой):
+    - Тест должен стать параметризированным
+    - Параметром является имя браузера ("chrome", "ff", "edge", ...)
+    - Перед началом работ, тест получает драйвер по имени из фабрики
+
+    Примеры вызовов:
+    - Открыть Хром WebDriverFactory.getDriver(Drivers.CHROME)
+    - Открыть Хром с опциями WebDriverFactory.getDriver(Drivers.CHROME, "--window-size=800,800", "--window-position=50,50")
+
+    Список опций по браузерам:
+    https://www.selenium.dev/documentation/webdriver/browsers/*/
+
+
+    //--------------------------------------------------------------------------------------------------
+    //Интересная библиотека Cartesian Product of Parameters (расширение для JUnit) https://junit-pioneer.org/docs/cartesian-product/
+    //Позволяет просто выполнять полный перебор параметров для тестов (например, здесь для каждого браузера
+    // из Enum DriverType будут выполнены тесты с разными параметрами т.е. будет выполнено Х*Y тестов)
+    @DisplayName("Добавление в корзину всех книг по Java:")
+    @CartesianTest
+    @CartesianTest.MethodFactory("browserParamsProvider")
+    public void buyJavaBooksPOFactory(DriverType driverType, String... args) throws InterruptedException {
+        //Создание драйвера через фабрику
+        WebDriverFactory factory = new WebDriverFactory();
+//        WebDriver browser = factory.getDriver(driverType);
+        WebDriver browser = factory.getDriver(driverType, args);
+
+
+        openedBrowsers.add(browser);    //Для очистки
+
+        MainPage mainPage = new MainPage(browser);
+
+        //1. Открытие страницы
+        //2. Скрыть плашку с cookies
+        mainPage.open();
+//
+//        //3. В поисковую строку написать `Java`
+//        //4. Выполнить поиск
+//        SearchResultPage searchResultPage = mainPage.getHeader().search("Java");
+//
+//        //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
+//        searchResultPage.changeSort(SortOption.HIGH_RATE);
+//
+//        //6. Добавить все товары на странице в корзину (кнопка Купить)
+//        //Фильтрация выборки и получение списка карточек книг
+//        List<BookCard> books = searchResultPage
+//                .closeChips(Chips.PREORDER)
+//                .closeChips(Chips.AWAITING)
+//                .closeChips(Chips.NOT_AVAILABLE)
+//                .getAllBooks();
+//
+//        //Добавление книг в корзины кликом по кнопке "В корзину"
+//        for (BookCard book : books) {
+//            book.addToCart();
+//        }
+//
+//        //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
+//        //Получение счётчика товаров в корзине
+//        int cartCounter =searchResultPage
+//                .getHeader()
+//                .awaitCartCounterToBe(books.size())
+//                .getCartCounter();
+//
+//        //Проверка счётчика
+//        assertEquals(books.size(), cartCounter);
+    }
+
+    //Провайдер данных для CartesianTest
+    static ArgumentSets browserParamsProvider(){
+        return ArgumentSets
+                .argumentsForFirstParameter(
+                        DriverType.values()
+                )
+                .argumentsForNextParameter(
+                        new String[]{"--window-size=800,800", "--window-position=50,50"},
+                        new String[]{"--window-size=100,1000", "--window-position=100,100"},
+                        new String[]{"--start-maximized"}
+                );
     }
 }
