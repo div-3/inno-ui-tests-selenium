@@ -5,10 +5,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.*;
 import org.junitpioneer.jupiter.cartesian.ArgumentSets;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.openqa.selenium.Cookie;
@@ -29,6 +28,7 @@ import ru.inno.labirint.page.SearchResultPage;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.openqa.selenium.By.cssSelector;
@@ -39,14 +39,15 @@ public class LabirintUITest {
     private static List<WebDriver> openedBrowsers = new ArrayList<>();
 
     @AfterAll
-    public static void clear(){
-        for (WebDriver b: openedBrowsers) {
+    public static void clear() {
+        for (WebDriver b : openedBrowsers) {
             b.quit();
         }
     }
 
 
     @Test
+    @DisplayName("Добавление в корзину всех книг по Java (исходный)")
     public void buyJavaBooksManual(ChromeDriver browser) throws InterruptedException {
 
         //Установка неявного ожидания для всех команд 4 секунды
@@ -112,6 +113,7 @@ public class LabirintUITest {
     }
 
     @Test
+    @DisplayName("Добавление в корзину всех книг по Java (на PageObject)")
     public void buyJavaBooksPageObject(ChromeDriver browser) throws InterruptedException {
         //Установка неявного ожидания для всех команд 4 секунды
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
@@ -143,7 +145,7 @@ public class LabirintUITest {
 
         //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
         //Получение счётчика товаров в корзине
-        int cartCounter =searchResultPage
+        int cartCounter = searchResultPage
                 .getHeader()
                 .awaitCartCounterToBe(books.size())
                 .getCartCounter();
@@ -151,6 +153,10 @@ public class LabirintUITest {
         //Проверка счётчика
         assertEquals(books.size(), cartCounter);
     }
+
+    /** ------------------------------------------------------------------------------------
+    * ДЗ2
+    * ------------------------------------------------------------------------------------*/
 
     /*Напишите фабрику WebDriver'ов
     Шаги:
@@ -173,19 +179,19 @@ public class LabirintUITest {
     https://www.selenium.dev/documentation/webdriver/browsers/*/
 
 
-    //--------------------------------------------------------------------------------------------------
-    //Интересная библиотека Cartesian Product of Parameters (расширение для JUnit) https://junit-pioneer.org/docs/cartesian-product/
-    //Позволяет просто выполнять полный перебор параметров для тестов (например, здесь для каждого браузера
-    // из Enum DriverType будут выполнены тесты с разными параметрами т.е. будет выполнено Х*Y тестов)
-    @DisplayName("Добавление в корзину всех книг по Java:")
-    @CartesianTest
-    @CartesianTest.MethodFactory("browserParamsProvider")
-    public void buyJavaBooksPOFactory(DriverType driverType, String... args) throws InterruptedException {
+    //Вариант 1 с параметрами
+    @DisplayName("Добавление в корзину всех книг по Java (PResolver 1):")
+    @ParameterizedTest(name = "в {0}: {1}")
+    @ArgumentsSource(driverParameterProvider.class)
+    public void buyJavaBooksFactoryParameterizedByJUnit(DriverType driverType, String... args) throws InterruptedException {
         //Создание драйвера через фабрику
         WebDriverFactory factory = new WebDriverFactory();
-//        WebDriver browser = factory.getDriver(driverType);
-        WebDriver browser = factory.getDriver(driverType, args);
-
+        WebDriver browser;
+        if (args.length == 0) {
+            browser = factory.getDriver(driverType);
+        } else {
+            browser = factory.getDriver(driverType, args);
+        }
 
         openedBrowsers.add(browser);    //Для очистки
 
@@ -194,48 +200,126 @@ public class LabirintUITest {
         //1. Открытие страницы
         //2. Скрыть плашку с cookies
         mainPage.open();
-//
-//        //3. В поисковую строку написать `Java`
-//        //4. Выполнить поиск
-//        SearchResultPage searchResultPage = mainPage.getHeader().search("Java");
-//
-//        //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
-//        searchResultPage.changeSort(SortOption.HIGH_RATE);
-//
-//        //6. Добавить все товары на странице в корзину (кнопка Купить)
-//        //Фильтрация выборки и получение списка карточек книг
-//        List<BookCard> books = searchResultPage
-//                .closeChips(Chips.PREORDER)
-//                .closeChips(Chips.AWAITING)
-//                .closeChips(Chips.NOT_AVAILABLE)
-//                .getAllBooks();
-//
-//        //Добавление книг в корзины кликом по кнопке "В корзину"
-//        for (BookCard book : books) {
-//            book.addToCart();
-//        }
-//
-//        //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
-//        //Получение счётчика товаров в корзине
-//        int cartCounter =searchResultPage
-//                .getHeader()
-//                .awaitCartCounterToBe(books.size())
-//                .getCartCounter();
-//
-//        //Проверка счётчика
-//        assertEquals(books.size(), cartCounter);
+
+        //3. В поисковую строку написать `Java`
+        //4. Выполнить поиск
+        SearchResultPage searchResultPage = mainPage.getHeader().search("Java");
+
+        //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
+        searchResultPage.changeSort(SortOption.HIGH_RATE);
+
+        //6. Добавить все товары на странице в корзину (кнопка Купить)
+        //Фильтрация выборки и получение списка карточек книг
+        List<BookCard> books = searchResultPage
+                .closeChips(Chips.PREORDER)
+                .closeChips(Chips.AWAITING)
+                .closeChips(Chips.NOT_AVAILABLE)
+                .getAllBooks();
+
+        //Добавление книг в корзины кликом по кнопке "В корзину"
+        for (BookCard book : books) {
+            book.addToCart();
+        }
+
+        //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
+        //Получение счётчика товаров в корзине
+        int cartCounter = searchResultPage
+                .getHeader()
+                .awaitCartCounterToBe(books.size())
+                .getCartCounter();
+
+        //Проверка счётчика
+        assertEquals(books.size(), cartCounter);
+    }
+
+    //Провайдер данных для теста
+    static class driverParameterProvider implements ArgumentsProvider {
+        @Override
+        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
+
+            return Stream.of(
+                    Arguments.of(DriverType.CHROME, new String[]{}),
+                    Arguments.of(DriverType.CHROME, new String[]{"-headless"}),
+                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=800,800", "--window-position=50,50"}),
+                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=100,1000", "--window-position=100,100"}),
+                    Arguments.of(DriverType.CHROME, new String[]{"--start-maximized"}),
+                    Arguments.of(DriverType.FIREFOX, new String[]{}),
+                    Arguments.of(DriverType.FIREFOX, new String[]{"-headless"}),
+                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=800", "--height=800"}),
+                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=100", "--height=1000"})
+            );
+        }
+    }
+
+
+    //Вариант 2 при наличии общих параметров для всех браузеров
+    //--------------------------------------------------------------------------------------------------
+    //Интересная библиотека Cartesian Product of Parameters (расширение для JUnit) https://junit-pioneer.org/docs/cartesian-product/
+    //Позволяет просто выполнять полный перебор параметров для тестов (например, здесь для каждого браузера
+    // из Enum DriverType будут выполнены тесты с разными параметрами т.е. будет выполнено Х*Y тестов)
+    @DisplayName("Добавление в корзину всех книг по Java (PResolver 2):")
+    @CartesianTest
+    @CartesianTest.MethodFactory("browserParamsProvider")
+    public void buyJavaBooksFactoryParameterizedByCartesian(DriverType driverType, String... args) throws InterruptedException {
+        //Создание драйвера через фабрику
+        WebDriverFactory factory = new WebDriverFactory();
+        WebDriver browser;
+        if (args.length == 0) {
+            browser = factory.getDriver(driverType);
+        } else {
+            browser = factory.getDriver(driverType, args);
+        }
+
+        openedBrowsers.add(browser);    //Для очистки
+
+        MainPage mainPage = new MainPage(browser);
+
+        //1. Открытие страницы
+        //2. Скрыть плашку с cookies
+        mainPage.open();
+
+        //3. В поисковую строку написать `Java`
+        //4. Выполнить поиск
+        SearchResultPage searchResultPage = mainPage.getHeader().search("Java");
+
+        //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
+        searchResultPage.changeSort(SortOption.HIGH_RATE);
+
+        //6. Добавить все товары на странице в корзину (кнопка Купить)
+        //Фильтрация выборки и получение списка карточек книг
+        List<BookCard> books = searchResultPage
+                .closeChips(Chips.PREORDER)
+                .closeChips(Chips.AWAITING)
+                .closeChips(Chips.NOT_AVAILABLE)
+                .getAllBooks();
+
+        //Добавление книг в корзины кликом по кнопке "В корзину"
+        for (BookCard book : books) {
+            book.addToCart();
+        }
+
+        //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
+        //Получение счётчика товаров в корзине
+        int cartCounter = searchResultPage
+                .getHeader()
+                .awaitCartCounterToBe(books.size())
+                .getCartCounter();
+
+        //Проверка счётчика
+        assertEquals(books.size(), cartCounter);
     }
 
     //Провайдер данных для CartesianTest
-    static ArgumentSets browserParamsProvider(){
+    static ArgumentSets browserParamsProvider() {
         return ArgumentSets
                 .argumentsForFirstParameter(
                         DriverType.values()
                 )
                 .argumentsForNextParameter(
-                        new String[]{"--window-size=800,800", "--window-position=50,50"},
-                        new String[]{"--window-size=100,1000", "--window-position=100,100"},
-                        new String[]{"--start-maximized"}
+                        new String[]{"-headless"},
+                        new String[]{} //Базовые настройки
+//                        new String[]{"--window-size=100,1000", "--window-position=100,100"},    //работает только для Chrome
+//                        new String[]{"--start-maximized"}   //Работает только для Chrome
                 );
     }
 }

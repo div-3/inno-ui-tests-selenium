@@ -11,9 +11,9 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 import java.time.Duration;
 
 public class WebDriverFactory {
-    public WebDriver getDriver(DriverType name){
+    public WebDriver getDriver(DriverType name) {
         WebDriver driver = null;
-        switch (name){
+        switch (name) {
             case EDGE -> {
                 driver = new EdgeDriver();
             }
@@ -30,9 +30,9 @@ public class WebDriverFactory {
         return driver;
     }
 
-    public WebDriver getDriver(DriverType name, String... args){
+    public WebDriver getDriver(DriverType name, String... args) {
         WebDriver driver = null;
-        switch (name){
+        switch (name) {
             case EDGE -> {
                 EdgeOptions options = new EdgeOptions();
                 for (String s : args) {
