@@ -2,6 +2,7 @@ package ru.inno.labirint;
 
 import io.github.bonigarcia.seljup.SeleniumJupiter;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,10 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
 import org.junitpioneer.jupiter.cartesian.ArgumentSets;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
-import org.openqa.selenium.Cookie;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -22,6 +20,7 @@ import ru.inno.factory.WebDriverFactory;
 import ru.inno.labirint.block.BookCard;
 import ru.inno.labirint.block.Chips;
 import ru.inno.labirint.block.SortOption;
+import ru.inno.labirint.other.NotChangeTextForXSecond;
 import ru.inno.labirint.page.MainPage;
 import ru.inno.labirint.page.SearchResultPage;
 
@@ -38,8 +37,8 @@ import static org.openqa.selenium.By.cssSelector;
 public class LabirintUITest {
     private static List<WebDriver> openedBrowsers = new ArrayList<>();
 
-    @AfterAll
-    public static void clear() {
+    @AfterEach
+    public void clear() {
         for (WebDriver b : openedBrowsers) {
             b.quit();
         }
@@ -79,7 +78,7 @@ public class LabirintUITest {
         browser.manage().timeouts().implicitlyWait(Duration.ZERO);
 
         //Включение явного ожидания появления кнопки "В корзину". Считаем, что все кнопки появляются одновременно
-        WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(15));
+        WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(15), Duration.ofMillis(100));
         wait.withMessage("Не дождались инициализации кнопок \"В корзину\"!")
                 .until(ExpectedConditions.stalenessOf(browser.findElement(cssSelector(".btn-tocart.buy-link"))));
 
@@ -98,15 +97,24 @@ public class LabirintUITest {
         //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
 
         //Просто подождать пока корзина обновится
-        Thread.sleep(5000);
+//        Thread.sleep(5000);
 
         //Или явное ожидание.
-        //Но не подойдёт, т.к. мы принудительно дожидаемся когда значение в корзине будет равно требуемому. А если оно через секунду будет больше?
+        //Но не подойдёт, т.к. мы принудительно дожидаемся когда значение в корзине будет равно требуемому.
+        // А если оно через секунду будет больше?
 //        wait.withMessage("Счётчик товаров в пиктограмме корзины не достиг нужного значения.")
-//                .until(ExpectedConditions.textToBe(cssSelector(".b-header-b-personal-e-icon-count-m-cart.basket-in-cart-a"), String.valueOf(buyButtons.size())));
+//                .until(ExpectedConditions.textToBe(cssSelector(".basket-in-cart-a"), String.valueOf(buyButtons.size())));
+
+
+        //Кастомный ExpectedCondition, который ждёт пока значение текста будет неизменно в течении указанного количества
+        // секунд. При использовании задаётся: локатор, период неизменности текста в секундах, sleepDuration, который
+        // указан в waiter в миллисекундах.
+        By cartIcon = cssSelector(".basket-in-cart-a");
+        WebElement cart = (WebElement) wait.withMessage("Счётчик товаров в пиктограмме корзины не достиг нужного значения.")
+                .until(new NotChangeTextForXSecond(cartIcon, 3, 100));
 
         //Получение счётчика товаров в корзине
-        int cartCounter = Integer.parseInt(browser.findElement(cssSelector(".b-header-b-personal-e-icon-count-m-cart.basket-in-cart-a")).getText());
+        int cartCounter = Integer.parseInt((cart).getText());
 
         //Проверка счётчика
         assertEquals(buyButtons.size(), cartCounter);

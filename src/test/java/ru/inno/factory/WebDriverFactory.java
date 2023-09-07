@@ -12,26 +12,13 @@ import java.time.Duration;
 
 public class WebDriverFactory {
     public WebDriver getDriver(DriverType name) {
-        WebDriver driver = null;
-        switch (name) {
-            case EDGE -> {
-                driver = new EdgeDriver();
-            }
-            case CHROME -> {
-                driver = new ChromeDriver();
-            }
-            case FIREFOX -> {
-                driver = new FirefoxDriver();
-            }
-            default -> throw new RuntimeException("Wrong WebDriver type!");
-        }
-
+        WebDriver driver = getDriver(name, new String[]{});
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
         return driver;
     }
 
     public WebDriver getDriver(DriverType name, String... args) {
-        WebDriver driver = null;
+        WebDriver driver;
         switch (name) {
             case EDGE -> {
                 EdgeOptions options = new EdgeOptions();
