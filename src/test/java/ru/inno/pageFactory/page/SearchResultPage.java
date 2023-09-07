@@ -1,12 +1,13 @@
-package ru.inno.labirint.page;
+package ru.inno.pageFactory.page;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import ru.inno.labirint.block.BookCard;
-import ru.inno.labirint.block.Chips;
-import ru.inno.labirint.block.SortOption;
+import ru.inno.pageFactory.block.BookCard;
+import ru.inno.pageFactory.block.Chips;
+import ru.inno.pageFactory.block.SortOption;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,15 +15,24 @@ import java.util.List;
 import static java.time.Duration.ofSeconds;
 import static org.openqa.selenium.By.cssSelector;
 import static org.openqa.selenium.support.ui.ExpectedConditions.invisibilityOf;
-import static org.openqa.selenium.support.ui.ExpectedConditions.stalenessOf;
 
-public class SearchResultPage extends Page{
+public class SearchResultPage extends Page {
+    @FindBy(css = "span.sorting-items")
+    private WebElement sortingSpan;
+    @FindBy(css = ".product-card")
+    private List<WebElement> cards;
+    @FindBy(css = "div.loading-panel")
+    private WebElement loader;
+    @FindBy(css = ".filter-reset")
+    private List<WebElement> chips;
+
     public SearchResultPage(WebDriver driver) {
         super(driver);
+        PageFactory.initElements(driver, this);
     }
 
-    public SearchResultPage changeSort(SortOption option){
-        driver.findElement(cssSelector("span.sorting-items")).click();
+    public SearchResultPage changeSort(SortOption option) {
+        sortingSpan.click();
         //TODO: разобраться, почему перестал работать чистый submit по элементу, без предварительного раскрытия списка
 //        driver.findElement(cssSelector("[data-event-content='" + option.getTitle() + "']")).submit();
         driver.findElement(cssSelector("[data-event-content='" + option.getTitle() + "']")).click();
@@ -30,9 +40,8 @@ public class SearchResultPage extends Page{
         return this;
     }
 
-    public List<BookCard> getAllBooks(){
+    public List<BookCard> getAllBooks() {
         List<BookCard> books = new ArrayList<>();
-        List<WebElement> cards = driver.findElements(cssSelector(".product-card"));
         for (WebElement e : cards) {
             books.add(new BookCard(e));
         }
@@ -40,14 +49,12 @@ public class SearchResultPage extends Page{
     }
 
     private void waitLoader() {
-        WebElement loader = driver.findElement(cssSelector("div.loading-panel"));
         new WebDriverWait(driver, ofSeconds(10)).until(invisibilityOf(loader));
     }
 
-    public SearchResultPage closeChips(Chips chipsToClose){
-        List<WebElement> chips = driver.findElements(cssSelector(".filter-reset"));
+    public SearchResultPage closeChips(Chips chipsToClose) {
         for (WebElement c : chips) {
-            if (c.getText().equalsIgnoreCase(chipsToClose.getTitle())){
+            if (c.getText().equalsIgnoreCase(chipsToClose.getTitle())) {
                 c.findElement(cssSelector(".filter-reset__icon")).click();
                 waitLoader();
                 break;
@@ -55,5 +62,4 @@ public class SearchResultPage extends Page{
         }
         return this;
     }
-
 }

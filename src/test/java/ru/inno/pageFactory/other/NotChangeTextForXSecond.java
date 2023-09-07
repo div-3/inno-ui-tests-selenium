@@ -1,4 +1,4 @@
-package ru.inno.labirint.other;
+package ru.inno.pageFactory.other;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;

@@ -1,4 +1,4 @@
-package ru.inno.labirint;
+package ru.inno.pageFactory;
 
 import io.github.bonigarcia.seljup.SeleniumJupiter;
 import org.junit.jupiter.api.AfterEach;
@@ -7,21 +7,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junitpioneer.jupiter.cartesian.ArgumentSets;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import ru.inno.factory.DriverType;
-import ru.inno.factory.WebDriverFactory;
-import ru.inno.labirint.block.BookCard;
-import ru.inno.labirint.block.Chips;
-import ru.inno.labirint.block.SortOption;
-import ru.inno.labirint.other.NotChangeTextForXSecond;
-import ru.inno.labirint.page.MainPage;
-import ru.inno.labirint.page.SearchResultPage;
+import ru.inno.pageFactory.factory.DriverType;
+import ru.inno.pageFactory.factory.WebDriverFactory;
+import ru.inno.pageFactory.block.BookCard;
+import ru.inno.pageFactory.block.Chips;
+import ru.inno.pageFactory.block.SortOption;
+import ru.inno.pageFactory.other.NotChangeTextForXSecond;
+import ru.inno.pageFactory.page.MainPage;
+import ru.inno.pageFactory.page.SearchResultPage;
 
 import java.time.Duration;
 import java.util.ArrayList;
