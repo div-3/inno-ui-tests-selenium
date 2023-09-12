@@ -1,6 +1,7 @@
 package ru.inno.labirint;
 
 import io.github.bonigarcia.seljup.SeleniumJupiter;
+import io.qameta.allure.Description;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -116,7 +117,7 @@ public class LabirintUITest {
         int cartCounter = Integer.parseInt((cart).getText());
 
         //Проверка счётчика
-        assertEquals(buyButtons.size(), cartCounter);
+        assertEquals(buyButtons.size(), cartCounter, "Не сошлись счётчики нажатых кнопок 'В корзину' и в иконке корзины");
     }
 
     @Test
@@ -188,6 +189,7 @@ public class LabirintUITest {
 
     //Вариант 1 с параметрами
     @DisplayName("Добавление в корзину всех книг по Java (PResolver 1):")
+    @Description("Проверяем, что можно найти и купить книги со страницы поиска.")
     @ParameterizedTest(name = "в {0}: {1}")
     @ArgumentsSource(driverParameterProvider.class)
     public void buyJavaBooksFactoryParameterizedByJUnit(DriverType driverType, String... args) throws InterruptedException {
@@ -236,7 +238,7 @@ public class LabirintUITest {
                 .getCartCounter();
 
         //Проверка счётчика
-        assertEquals(books.size(), cartCounter);
+        assertEquals(books.size(), cartCounter, "Не сошлись счётчики нажатых кнопок 'В корзину' и в иконке корзины");
     }
 
     //Провайдер данных для теста
