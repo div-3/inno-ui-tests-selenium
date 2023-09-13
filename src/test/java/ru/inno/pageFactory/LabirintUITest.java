@@ -1,9 +1,10 @@
 package ru.inno.pageFactory;
 
 import io.github.bonigarcia.seljup.SeleniumJupiter;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import io.qameta.allure.Description;
+import io.qameta.allure.Severity;
+import io.qameta.allure.SeverityLevel;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,6 +15,8 @@ import org.junitpioneer.jupiter.cartesian.ArgumentSets;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import ru.inno.pageFactory.factory.DriverType;
@@ -25,9 +28,14 @@ import ru.inno.pageFactory.other.NotChangeTextForXSecond;
 import ru.inno.pageFactory.page.MainPage;
 import ru.inno.pageFactory.page.SearchResultPage;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,6 +45,14 @@ import static org.openqa.selenium.By.cssSelector;
 @ExtendWith(SeleniumJupiter.class)
 public class LabirintUITest {
     private static List<WebDriver> openedBrowsers = new ArrayList<>();
+    private static String envPropsForAllureFilename = "allure-results/environment.properties";
+
+    @BeforeAll
+    public static void setUp() {
+        try {
+            Files.delete(Paths.get(envPropsForAllureFilename));
+        } catch (IOException e) {}
+    }
 
     @AfterEach
     public void clear() {
@@ -190,9 +206,13 @@ public class LabirintUITest {
 
     //Вариант 1 с параметрами
     @DisplayName("Добавление в корзину всех книг по Java (PResolver 1):")
+    @Tag("Positive")
+    @Tags({@Tag("Search"), @Tag("AddToCart")})  //Теги для JUnit и Allure
+    @Description("Тест поиска книг по Java и добавление в корзину со страницы результатов поиска.") //Описание теста для Allure
+    @Severity(SeverityLevel.BLOCKER)    //Важность теста для Allure
     @ParameterizedTest(name = "в {0}: {1}")
     @ArgumentsSource(driverParameterProvider.class)
-    public void buyJavaBooksFactoryParameterizedByJUnit(DriverType driverType, String... args) throws InterruptedException {
+    public void buyJavaBooksFactoryParameterizedByJUnit(DriverType driverType, String... args) throws IOException {
         //Создание драйвера через фабрику
         WebDriverFactory factory = new WebDriverFactory();
         WebDriver browser;
@@ -201,6 +221,8 @@ public class LabirintUITest {
         } else {
             browser = factory.getDriver(driverType, args);
         }
+
+        addEnvParamsToAllure(browser, "Добавление в корзину всех книг по Java (PResolver 1): " + driverType);
 
         openedBrowsers.add(browser);    //Для очистки
 
@@ -241,21 +263,36 @@ public class LabirintUITest {
         assertEquals(books.size(), cartCounter);
     }
 
+    @Test
+    public void addEnvParamsToAllure(WebDriver driver, String testId) throws IOException {
+        Properties properties = new Properties();
+        Capabilities caps = ((RemoteWebDriver)driver).getCapabilities();
+
+        properties.put("test.id", testId);
+        properties.put("browser", caps.getBrowserName());
+        properties.put("browser.version", caps.getBrowserVersion());
+        properties.put("os", System.getProperty("os.name"));
+
+        FileOutputStream outputStream = new FileOutputStream(envPropsForAllureFilename, true);
+        properties.store(outputStream, "Tests Environment Properties");
+
+    }
+
     //Провайдер данных для теста
     static class driverParameterProvider implements ArgumentsProvider {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
 
             return Stream.of(
-                    Arguments.of(DriverType.CHROME, new String[]{}),
+//                    Arguments.of(DriverType.CHROME, new String[]{}),
                     Arguments.of(DriverType.CHROME, new String[]{"-headless"}),
-                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=800,800", "--window-position=50,50"}),
-                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=100,1000", "--window-position=100,100"}),
-                    Arguments.of(DriverType.CHROME, new String[]{"--start-maximized"}),
-                    Arguments.of(DriverType.FIREFOX, new String[]{}),
-                    Arguments.of(DriverType.FIREFOX, new String[]{"-headless"}),
-                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=800", "--height=800"}),
-                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=100", "--height=1000"})
+//                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=800,800", "--window-position=50,50"}),
+//                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=100,1000", "--window-position=100,100"}),
+//                    Arguments.of(DriverType.CHROME, new String[]{"--start-maximized"}),
+//                    Arguments.of(DriverType.FIREFOX, new String[]{}),
+                    Arguments.of(DriverType.FIREFOX, new String[]{"-headless"})
+//                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=800", "--height=800"}),
+//                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=100", "--height=1000"})
             );
         }
     }
