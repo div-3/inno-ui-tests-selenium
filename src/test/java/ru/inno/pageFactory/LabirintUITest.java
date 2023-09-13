@@ -204,6 +204,13 @@ public class LabirintUITest {
     https://www.selenium.dev/documentation/webdriver/browsers/*/
 
 
+    //Работа с:
+    //1. Page Object - для ООП представления UI
+    //2. Page Factory (Selenium) - для автоматического поиска WebElement для Page Object
+    //3. Factory - для создания конкретного WebDriver
+    //4. Allure - для создания отчётов
+    //5. JUnit ParameterizedTest - для запуска тестов с параметрами
+
     //Вариант 1 с параметрами
     @DisplayName("Добавление в корзину всех книг по Java (PResolver 1):")
     @Tag("Positive")
@@ -263,15 +270,21 @@ public class LabirintUITest {
         assertEquals(books.size(), cartCounter);
     }
 
-    @Test
+    //Заполнение файла environment.properties параметрами окружения.
+    //Вызывается в явном виде в тестах.
     public void addEnvParamsToAllure(WebDriver driver, String testId) throws IOException {
         Properties properties = new Properties();
         Capabilities caps = ((RemoteWebDriver)driver).getCapabilities();
 
-        properties.put("test.id", testId);
-        properties.put("browser", caps.getBrowserName());
-        properties.put("browser.version", caps.getBrowserVersion());
-        properties.put("os", System.getProperty("os.name"));
+        String testIdHash = String.valueOf(testId.hashCode());
+        properties.put("test.id." + testIdHash, testId);
+        properties.put("browser." + testIdHash, caps.getBrowserName());
+        properties.put("browser.version." + testIdHash, caps.getBrowserVersion());
+        properties.put("os." + testIdHash, System.getProperty("os.name"));
+
+        //Создание каталога
+        String path = "allure-results/";
+        Files.createDirectories(Paths.get(path));
 
         FileOutputStream outputStream = new FileOutputStream(envPropsForAllureFilename, true);
         properties.store(outputStream, "Tests Environment Properties");
@@ -285,12 +298,12 @@ public class LabirintUITest {
 
             return Stream.of(
 //                    Arguments.of(DriverType.CHROME, new String[]{}),
-                    Arguments.of(DriverType.CHROME, new String[]{"-headless"}),
+                    Arguments.of(DriverType.CHROME, new String[]{"-headless"})
 //                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=800,800", "--window-position=50,50"}),
 //                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=100,1000", "--window-position=100,100"}),
 //                    Arguments.of(DriverType.CHROME, new String[]{"--start-maximized"}),
 //                    Arguments.of(DriverType.FIREFOX, new String[]{}),
-                    Arguments.of(DriverType.FIREFOX, new String[]{"-headless"})
+//                    Arguments.of(DriverType.FIREFOX, new String[]{"-headless"})
 //                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=800", "--height=800"}),
 //                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=100", "--height=1000"})
             );
