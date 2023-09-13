@@ -1,11 +1,6 @@
-rd \allure-results /q /s
-
-mvn -Dgroups=Search clean test
-
+rd .\allure-results /q /s
+call mvn -Dgroups=Search clean test
 mkdir .\allure-results\history\
-
 copy .\allure-report\history\ .\allure-results\history\
-
-allure generate --clean
-
-allure open
+call allure generate --clean
+call allure open

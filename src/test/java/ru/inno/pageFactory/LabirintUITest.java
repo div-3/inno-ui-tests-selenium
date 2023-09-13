@@ -1,9 +1,7 @@
 package ru.inno.pageFactory;
 
 import io.github.bonigarcia.seljup.SeleniumJupiter;
-import io.qameta.allure.Description;
-import io.qameta.allure.Severity;
-import io.qameta.allure.SeverityLevel;
+import io.qameta.allure.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -19,6 +17,7 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.opentest4j.AssertionFailedError;
 import ru.inno.pageFactory.factory.DriverType;
 import ru.inno.pageFactory.factory.WebDriverFactory;
 import ru.inno.pageFactory.block.BookCard;
@@ -28,16 +27,20 @@ import ru.inno.pageFactory.other.NotChangeTextForXSecond;
 import ru.inno.pageFactory.page.MainPage;
 import ru.inno.pageFactory.page.SearchResultPage;
 
+import javax.management.Query;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.PreparedStatement;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
 
+import static io.qameta.allure.Allure.step;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.openqa.selenium.By.cssSelector;
 
@@ -51,7 +54,8 @@ public class LabirintUITest {
     public static void setUp() {
         try {
             Files.delete(Paths.get(envPropsForAllureFilename));
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
     }
 
     @AfterEach
@@ -179,9 +183,11 @@ public class LabirintUITest {
         assertEquals(books.size(), cartCounter);
     }
 
-    /** ------------------------------------------------------------------------------------
-    * ДЗ2
-    * ------------------------------------------------------------------------------------*/
+    /**
+     * ------------------------------------------------------------------------------------
+     * ДЗ2
+     * ------------------------------------------------------------------------------------
+     */
 
     /*Напишите фабрику WebDriver'ов
     Шаги:
@@ -213,9 +219,14 @@ public class LabirintUITest {
 
     //Вариант 1 с параметрами
     @DisplayName("Добавление в корзину всех книг по Java (PResolver 1):")
+    @Epic("Каталог")
+    @Story("Как пользователь, я могу искать товары по названию")
+    @Feature("Поиск по каталогу")
+    @Owner("Dudorov")
     @Tag("Positive")
     @Tags({@Tag("Search"), @Tag("AddToCart")})  //Теги для JUnit и Allure
-    @Description("Тест поиска книг по Java и добавление в корзину со страницы результатов поиска.") //Описание теста для Allure
+    @Description("Тест поиска книг по Java и добавление в корзину со страницы результатов поиска.")
+    //Описание теста для Allure
     @Severity(SeverityLevel.BLOCKER)    //Важность теста для Allure
     @ParameterizedTest(name = "в {0}: {1}")
     @ArgumentsSource(driverParameterProvider.class)
@@ -229,15 +240,20 @@ public class LabirintUITest {
             browser = factory.getDriver(driverType, args);
         }
 
-        addEnvParamsToAllure(browser, "Добавление в корзину всех книг по Java (PResolver 1): " + driverType);
+        //Сохранение параметров среды в environment.properties
+        addEnvParamsToAllure(browser, "Добавление в корзину всех книг по Java (PResolver 1): "
+                + Arrays.toString(args)
+                + driverType);
 
-        openedBrowsers.add(browser);    //Для очистки
+        //Сохранение драйвера для очистки после завершения тестов
+        openedBrowsers.add(browser);
 
         MainPage mainPage = new MainPage(browser);
 
         //1. Открытие страницы
         //2. Скрыть плашку с cookies
         mainPage.open();
+//        getScreenshot(browser); //Сделать скриншот главной страницы и добавить его в отчёт Allure
 
         //3. В поисковую строку написать `Java`
         //4. Выполнить поиск
@@ -255,9 +271,20 @@ public class LabirintUITest {
                 .getAllBooks();
 
         //Добавление книг в корзины кликом по кнопке "В корзину"
-        for (BookCard book : books) {
-            book.addToCart();
-        }
+        step("Добавить все товары в корзину.", () -> {
+
+            generateJson(); //Добавление json-файла в Attachment к Allure
+
+            for (BookCard book : books) {
+                book.addToCart();
+            }
+        });
+
+        //Пример step() в качестве логирования каких-то тестовых данных в Allure
+        String getAllQuery = "SELECT * FROM CUSTOMER";
+        //Что-то на JDBC
+        step("Какой-то текст для логирования, например, SQL-запрос: " + getAllQuery);
+
 
         //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
         //Получение счётчика товаров в корзине
@@ -267,14 +294,35 @@ public class LabirintUITest {
                 .getCartCounter();
 
         //Проверка счётчика
-        assertEquals(books.size(), cartCounter);
+        step("Проверить, что счётчик в корзине показывает " + books.size(),
+                () -> {
+                    try {
+                        assertEquals(books.size() + 1, cartCounter);
+                    } catch (AssertionFailedError error) {
+                        getScreenshot(browser);     //Делать скриншот при ошибке в assert
+                        throw error;
+                    }
+                });
+
+    }
+
+    //Получение скриншота и добавление его в Allure как Attachment
+    @Attachment(value = "screen.png", type = "image/png")
+    private byte[] getScreenshot(WebDriver driver) {
+        return driver.findElement(cssSelector("body")).getScreenshotAs(OutputType.BYTES);
+    }
+
+    //Получение Строки и добавление его в Allure как Attachment (например, как json-файл)
+    @Attachment(value = "requestBody.json", type = "application/json")
+    private String generateJson() {
+        return "{\"tester\":\"Ivan\", \"age\":37}";
     }
 
     //Заполнение файла environment.properties параметрами окружения.
     //Вызывается в явном виде в тестах.
     public void addEnvParamsToAllure(WebDriver driver, String testId) throws IOException {
         Properties properties = new Properties();
-        Capabilities caps = ((RemoteWebDriver)driver).getCapabilities();
+        Capabilities caps = ((RemoteWebDriver) driver).getCapabilities();
 
         String testIdHash = String.valueOf(testId.hashCode());
         properties.put("test.id." + testIdHash, testId);
@@ -286,6 +334,7 @@ public class LabirintUITest {
         String path = "allure-results/";
         Files.createDirectories(Paths.get(path));
 
+        //Сохранение параметров окружения в файл
         FileOutputStream outputStream = new FileOutputStream(envPropsForAllureFilename, true);
         properties.store(outputStream, "Tests Environment Properties");
 
@@ -303,7 +352,7 @@ public class LabirintUITest {
 //                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=100,1000", "--window-position=100,100"}),
 //                    Arguments.of(DriverType.CHROME, new String[]{"--start-maximized"}),
 //                    Arguments.of(DriverType.FIREFOX, new String[]{}),
-//                    Arguments.of(DriverType.FIREFOX, new String[]{"-headless"})
+//                    Arguments.of(DriverType.FIREFOX, new String[]{"-headless"}),
 //                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=800", "--height=800"}),
 //                    Arguments.of(DriverType.FIREFOX, new String[]{"--width=100", "--height=1000"})
             );

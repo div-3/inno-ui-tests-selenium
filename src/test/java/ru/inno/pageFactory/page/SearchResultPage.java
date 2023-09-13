@@ -1,5 +1,6 @@
 package ru.inno.pageFactory.page;
 
+import io.qameta.allure.Step;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -31,6 +32,7 @@ public class SearchResultPage extends Page {
         PageFactory.initElements(driver, this);
     }
 
+    @Step("Установить сортировку товаров на '{option}'")
     public SearchResultPage changeSort(SortOption option) {
         sortingSpan.click();
         //TODO: разобраться, почему перестал работать чистый submit по элементу, без предварительного раскрытия списка
@@ -40,6 +42,7 @@ public class SearchResultPage extends Page {
         return this;
     }
 
+    @Step("Получить все книги")
     public List<BookCard> getAllBooks() {
         List<BookCard> books = new ArrayList<>();
         for (WebElement e : cards) {
@@ -48,10 +51,13 @@ public class SearchResultPage extends Page {
         return books;
     }
 
+    @Step("Ждём окончания загрузки данных")
     private void waitLoader() {
         new WebDriverWait(driver, ofSeconds(10)).until(invisibilityOf(loader));
     }
 
+    @Step("Закрыть фильтр '{chipsToClose.title}'")
+    //Чтобы вытаскивалось нормальное название из Enum, надо переопределить метод toString
     public SearchResultPage closeChips(Chips chipsToClose) {
         for (WebElement c : chips) {
             if (c.getText().equalsIgnoreCase(chipsToClose.getTitle())) {
