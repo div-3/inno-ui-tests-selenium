@@ -2,9 +2,7 @@ package ru.inno.labirint;
 
 import io.github.bonigarcia.seljup.SeleniumJupiter;
 import io.qameta.allure.Description;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,12 +13,12 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import ru.inno.factory.DriverType;
-import ru.inno.factory.WebDriverFactory;
+import ru.inno.pageFactory.other.NotChangeTextForXSecond;
+import ru.inno.wDFactory.DriverType;
+import ru.inno.wDFactory.WebDriverFactory;
 import ru.inno.labirint.block.BookCard;
 import ru.inno.labirint.block.Chips;
 import ru.inno.labirint.block.SortOption;
-import ru.inno.labirint.other.NotChangeTextForXSecond;
 import ru.inno.labirint.page.MainPage;
 import ru.inno.labirint.page.SearchResultPage;
 
@@ -44,10 +42,9 @@ public class LabirintUITest {
         }
     }
 
-
     @Test
     @DisplayName("Добавление в корзину всех книг по Java (исходный)")
-    public void buyJavaBooksManual(ChromeDriver browser) throws InterruptedException {
+    public void buyJavaBooksManual(ChromeDriver browser) {
 
         //Установка неявного ожидания для всех команд 4 секунды
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
@@ -117,7 +114,7 @@ public class LabirintUITest {
         int cartCounter = Integer.parseInt((cart).getText());
 
         //Проверка счётчика
-        assertEquals(buyButtons.size(), cartCounter, "Не сошлись счётчики нажатых кнопок 'В корзину' и в иконке корзины");
+        assertEquals(buyButtons.size(), cartCounter);
     }
 
     @Test
@@ -162,9 +159,11 @@ public class LabirintUITest {
         assertEquals(books.size(), cartCounter);
     }
 
-    /** ------------------------------------------------------------------------------------
-    * ДЗ2
-    * ------------------------------------------------------------------------------------*/
+    /**
+     * ------------------------------------------------------------------------------------
+     * ДЗ2
+     * ------------------------------------------------------------------------------------
+     */
 
     /*Напишите фабрику WebDriver'ов
     Шаги:

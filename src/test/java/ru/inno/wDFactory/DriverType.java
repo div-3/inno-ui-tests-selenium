@@ -1,4 +1,4 @@
-package ru.inno.factory;
+package ru.inno.wDFactory;
 
 public enum DriverType {
     CHROME,
