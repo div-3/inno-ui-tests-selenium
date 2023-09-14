@@ -297,13 +297,12 @@ public class LabirintUITest {
         step("Проверить, что счётчик в корзине показывает " + books.size(),
                 () -> {
                     try {
-                        assertEquals(books.size() + 1, cartCounter);
+                        assertEquals(books.size(), cartCounter);
                     } catch (AssertionFailedError error) {
                         getScreenshot(browser);     //Делать скриншот при ошибке в assert
                         throw error;
                     }
                 });
-
     }
 
     //Получение скриншота и добавление его в Allure как Attachment
