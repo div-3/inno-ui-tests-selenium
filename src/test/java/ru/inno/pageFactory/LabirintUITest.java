@@ -13,7 +13,6 @@ import org.junitpioneer.jupiter.cartesian.ArgumentSets;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -27,12 +26,10 @@ import ru.inno.pageFactory.other.NotChangeTextForXSecond;
 import ru.inno.pageFactory.page.MainPage;
 import ru.inno.pageFactory.page.SearchResultPage;
 
-import javax.management.Query;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.PreparedStatement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,14 +44,15 @@ import static org.openqa.selenium.By.cssSelector;
 @DisplayName("UI-тесты labirint.ru:")
 @ExtendWith(SeleniumJupiter.class)
 public class LabirintUITest {
-    private static List<WebDriver> openedBrowsers = new ArrayList<>();
-    private static String envPropsForAllureFilename = "allure-results/environment.properties";
+    private static final List<WebDriver> openedBrowsers = new ArrayList<>();
+    private static final String envPropsForAllureFilename = "allure-results/environment.properties";
 
     @BeforeAll
     public static void setUp() {
         try {
             Files.delete(Paths.get(envPropsForAllureFilename));
         } catch (IOException e) {
+            System.out.println("Файл environment.properties отсутствует.");
         }
     }
 
@@ -68,7 +66,7 @@ public class LabirintUITest {
 
     @Test
     @DisplayName("Добавление в корзину всех книг по Java (исходный)")
-    public void buyJavaBooksManual(ChromeDriver browser) throws InterruptedException {
+    public void buyJavaBooksManual(ChromeDriver browser) {
 
         //Установка неявного ожидания для всех команд 4 секунды
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
@@ -143,7 +141,7 @@ public class LabirintUITest {
 
     @Test
     @DisplayName("Добавление в корзину всех книг по Java (на PageObject)")
-    public void buyJavaBooksPageObject(ChromeDriver browser) throws InterruptedException {
+    public void buyJavaBooksPageObject(ChromeDriver browser) {
         //Установка неявного ожидания для всех команд 4 секунды
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
 
@@ -196,7 +194,7 @@ public class LabirintUITest {
     2. Напишите класс WebDriverFactory:
     - Фабрика предоставляет два метода getDriver(String name) и getDriver(String name, String... args)
     - Первый метод создает новый веб-драйвер (какой именно - определяется из name)
-    - Второй метод также создает драйвер, но запускает его с параметрами, которые были переданы в args)
+    - Второй метод также создает драйвер, но запускает его с параметрами, которые были переданы в args
     3. Доработайте ваш тест на Лабиринт (или любой другой):
     - Тест должен стать параметризированным
     - Параметром является имя браузера ("chrome", "ff", "edge", ...)
@@ -342,7 +340,7 @@ public class LabirintUITest {
     //Провайдер данных для теста
     static class driverParameterProvider implements ArgumentsProvider {
         @Override
-        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
+        public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
 
             return Stream.of(
 //                    Arguments.of(DriverType.CHROME, new String[]{}),
@@ -367,7 +365,7 @@ public class LabirintUITest {
     @DisplayName("Добавление в корзину всех книг по Java (PResolver 2):")
     @CartesianTest
     @CartesianTest.MethodFactory("browserParamsProvider")
-    public void buyJavaBooksFactoryParameterizedByCartesian(DriverType driverType, String... args) throws InterruptedException {
+    public void buyJavaBooksFactoryParameterizedByCartesian(DriverType driverType, String... args) {
         //Создание драйвера через фабрику
         WebDriverFactory factory = new WebDriverFactory();
         WebDriver browser;
