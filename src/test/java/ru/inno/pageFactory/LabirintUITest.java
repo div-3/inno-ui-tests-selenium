@@ -54,6 +54,7 @@ import static org.openqa.selenium.By.cssSelector;
 public class LabirintUITest extends BaseUITest {
     private static final List<WebDriver> openedBrowsers = new ArrayList<>();
     private static final String envPropsForAllureFilename = "allure-results/environment.properties";
+    private final String BASE_URL = "https://www.labirint.ru";
 
     @BeforeAll
     public static void setUp() {
@@ -78,7 +79,7 @@ public class LabirintUITest extends BaseUITest {
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
 
         //1. Открытие страницы
-        browser.get("https://www.labirint.ru/");
+        browser.get(BASE_URL);
 
         //2. Скрыть плашку с cookies
         // Установка cookie для отключения показа плашки "Принять Cookie"
@@ -148,59 +149,42 @@ public class LabirintUITest extends BaseUITest {
     @Test
     @Tag("Search")
     @DisplayName("Добавление в корзину всех книг по Java (Selenide)")
-    public void buyJavaBooksManualSelenide() {
+    public void buyJavaBooksManualSelenide() throws InterruptedException {
 
         //Настройка Selenide
-        Configuration.baseUrl = "https://www.labirint.ru";
+        Configuration.baseUrl = BASE_URL;
 
-        //1. Открытие страницы
-        open("/");
-        webDriver = WebDriverRunner.getWebDriver();
+        step("1. Открыть страницу " + BASE_URL, () -> {
+            open("/");
+        });
 
-        //2. Скрыть плашку с cookies
-        // Установка cookie для отключения показа плашки "Принять Cookie"
-        Cookie cookie = new Cookie("cookie_policy", "1");
-        WebDriverRunner.getWebDriver().manage().addCookie(cookie);
+        webDriver = WebDriverRunner.getWebDriver();     //Для TestWatcher для создания скриншотов
+        step("2. Скрыть плашку с cookies", () -> {
+            Cookie cookie = new Cookie("cookie_policy", "1");
+            WebDriverRunner.getWebDriver().manage().addCookie(cookie);
+        });
 
+        step("3. В поисковую строку написать `Java`, выполнить поиск", () -> {
+            $("#search-field").val("Java").pressEnter();
+        });
 
-        //3. В поисковую строку написать `Java`
-        //4. Выполнить поиск
-        $("#search-field").val("Java").pressEnter();
-
-        //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
-        $("span.sorting-items").click();
-        $("[data-event-content='высокий рейтинг']").click();
-
-
-        //5.1. Закрываем "чипсы"
+        step("4. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`", () -> {
+            $("span.sorting-items").click();
+            $("[data-event-content='высокий рейтинг']").click();
+        });
 
         //Ожидаем закрытия loader'а
-        $("div.loading-panel").shouldNotBe(visible, Duration.ofSeconds(5));
+        waitLoaderOut();
 
-        //Получение "чипсов"
-        ElementsCollection chips = $$(".filter-reset__content");
+        step("5. Закрыть 'чипсы'", () -> {
+            closeChips(Chips.PREORDER);
+            closeChips(Chips.AWAITING);
+            closeChips(Chips.NOT_AVAILABLE);
+        });
 
-        for (SelenideElement c : chips) {
-            if (c.getText().equalsIgnoreCase(Chips.PREORDER.getTitle()) ||
-                    c.getText().equalsIgnoreCase(Chips.AWAITING.getTitle()) ||
-                    c.getText().equalsIgnoreCase(Chips.NOT_AVAILABLE.getTitle()))
-            {
-                c.click();
-            }
-
-            //Ожидаем закрытия loader'а
-//            $("div.loading-panel").shouldNotBe(visible, Duration.ofSeconds(5));
-//            if (c.getText().equalsIgnoreCase(chipsToClose.getTitle())) {
-//                c.findElement(cssSelector(".filter-reset__icon")).click();
-//                waitLoader();
-//                break;
-//            }
-        }
-
-        //6. Добавить все товары на странице в корзину (кнопка Купить)
-
+        step("6. Добавить все товары на странице в корзину (кнопка Купить)");
         //Ожидаем закрытия loader'а
-        $("div.loading-panel").shouldNotBe(visible, Duration.ofSeconds(5));
+        waitLoaderOut();
 
         //Получение списка кнопок "В корзину"
         ElementsCollection buyButtons = $$(".btn-tocart.buy-link");
@@ -210,13 +194,33 @@ public class LabirintUITest extends BaseUITest {
             element.click();
         }
 
-        //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
-        //Получение счётчика товаров в корзине
-//        int cartCounter = Integer.parseInt((cart).getText());
-        int cartCounter = Integer.parseInt($(".basket-in-cart-a").getText());
+        step("7. Счетчик товаров в корзине должен быть равен количеству добавленных товаров на шаге 6", () -> {
+            //Получение счётчика товаров в корзине
+            $(".basket-in-cart-a").shouldHave(ownText(String.valueOf(buyButtons.size())));  //Явно ждём появления в корзине нужного количества товара
+            sleep(2000);    //Ещё немного ждём, чтобы проверить, что количество товаров не увеличилось
 
-        //Проверка счётчика
-        assertEquals(buyButtons.size(), cartCounter);
+            int cartCounter = Integer.parseInt($(".basket-in-cart-a").getText());
+
+            //Проверка счётчика
+            assertEquals(buyButtons.size(), cartCounter);
+        } );
+    }
+
+    //Закрыть "чипсу"
+    private static void closeChips(Chips chip) {
+        ElementsCollection chips = $(".navisort__filters-reset").shouldBe(visible).$$(".filter-reset__content");
+        for (SelenideElement c : chips) {
+            if (c.getText().equalsIgnoreCase(chip.getTitle())) {
+                c.shouldBe(visible, enabled).click();
+                waitLoaderOut();
+                return;
+            }
+        }
+    }
+
+    //Ожидаем закрытия loader'а
+    private static void waitLoaderOut() {
+        $("div.loading-panel").shouldNotBe(visible, Duration.ofSeconds(5));
     }
 
     @Test
@@ -375,7 +379,7 @@ public class LabirintUITest extends BaseUITest {
         //Проверка счётчика
         step("Проверить, что счётчик в корзине показывает " + books.size(),
                 () -> {
-                    assertEquals(books.size() + 1, cartCounter);
+                    assertEquals(books.size(), cartCounter);
                 });
     }
 
