@@ -1,10 +1,10 @@
 package ru.inno.pageFactory.block;
 
 public enum Chips {
-    AVAILABLE("в наличии"),
-    PREORDER("предзаказ"),
-    AWAITING("ожидаются"),
-    NOT_AVAILABLE("нет в продаже");
+    AVAILABLE("В наличии"),
+    PREORDER("Предзаказ"),
+    AWAITING("Ожидаются"),
+    NOT_AVAILABLE("Нет в продаже");
 
     private final String title;
 

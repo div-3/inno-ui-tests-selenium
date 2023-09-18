@@ -1,12 +1,14 @@
 package ru.inno.pageFactory;
 
 import com.codeborne.selenide.Configuration;
+import com.codeborne.selenide.ElementsCollection;
+import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.WebDriverRunner;
 import io.github.bonigarcia.seljup.SeleniumJupiter;
 import io.qameta.allure.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
@@ -16,15 +18,16 @@ import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.opentest4j.AssertionFailedError;
+import ru.inno.common.BaseUITest;
 import ru.inno.common.MyTestWatcher;
-import ru.inno.pageFactory.factory.DriverType;
-import ru.inno.pageFactory.factory.WebDriverFactory;
 import ru.inno.pageFactory.block.BookCard;
 import ru.inno.pageFactory.block.Chips;
 import ru.inno.pageFactory.block.SortOption;
+import ru.inno.pageFactory.factory.DriverType;
+import ru.inno.pageFactory.factory.WebDriverFactory;
 import ru.inno.pageFactory.other.NotChangeTextForXSecond;
 import ru.inno.pageFactory.page.MainPage;
 import ru.inno.pageFactory.page.SearchResultPage;
@@ -40,14 +43,15 @@ import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import static com.codeborne.selenide.Selenide.open;
+import static com.codeborne.selenide.Condition.*;
+import static com.codeborne.selenide.Selenide.*;
 import static io.qameta.allure.Allure.step;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.openqa.selenium.By.cssSelector;
 
 @DisplayName("UI-тесты labirint.ru:")
-@ExtendWith({SeleniumJupiter.class})
-public class LabirintUITest {
+@ExtendWith({SeleniumJupiter.class, MyTestWatcher.class})
+public class LabirintUITest extends BaseUITest {
     private static final List<WebDriver> openedBrowsers = new ArrayList<>();
     private static final String envPropsForAllureFilename = "allure-results/environment.properties";
 
@@ -70,7 +74,7 @@ public class LabirintUITest {
     @Test
     @DisplayName("Добавление в корзину всех книг по Java (исходный)")
     public void buyJavaBooksManual(ChromeDriver browser) {
-         //Установка неявного ожидания для всех команд 4 секунды
+        //Установка неявного ожидания для всех команд 4 секунды
         browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
 
         //1. Открытие страницы
@@ -142,76 +146,74 @@ public class LabirintUITest {
     }
 
     @Test
+    @Tag("Search")
     @DisplayName("Добавление в корзину всех книг по Java (Selenide)")
-    public void buyJavaBooksManualSelenide(ChromeDriver browser) {
+    public void buyJavaBooksManualSelenide() {
 
         //Настройка Selenide
         Configuration.baseUrl = "https://www.labirint.ru";
 
         //1. Открытие страницы
         open("/");
+        webDriver = WebDriverRunner.getWebDriver();
 
         //2. Скрыть плашку с cookies
         // Установка cookie для отключения показа плашки "Принять Cookie"
+        Cookie cookie = new Cookie("cookie_policy", "1");
+        WebDriverRunner.getWebDriver().manage().addCookie(cookie);
 
-        Cookie cookiePolicy = new Cookie("cookie_policy", "1");
-        browser.manage().addCookie(cookiePolicy);
-        browser.navigate().refresh();
 
         //3. В поисковую строку написать `Java`
         //4. Выполнить поиск
-        browser.findElement(cssSelector("#search-field")).sendKeys("Java", Keys.RETURN);
+        $("#search-field").val("Java").pressEnter();
 
         //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
-        browser.findElement(cssSelector("span.sorting-items")).click();
-        browser.findElement(cssSelector("[data-event-content='высокий рейтинг']")).click();
+        $("span.sorting-items").click();
+        $("[data-event-content='высокий рейтинг']").click();
+
+
+        //5.1. Закрываем "чипсы"
+
+        //Ожидаем закрытия loader'а
+        $("div.loading-panel").shouldNotBe(visible, Duration.ofSeconds(5));
+
+        //Получение "чипсов"
+        ElementsCollection chips = $$(".filter-reset__content");
+
+        for (SelenideElement c : chips) {
+            if (c.getText().equalsIgnoreCase(Chips.PREORDER.getTitle()) ||
+                    c.getText().equalsIgnoreCase(Chips.AWAITING.getTitle()) ||
+                    c.getText().equalsIgnoreCase(Chips.NOT_AVAILABLE.getTitle()))
+            {
+                c.click();
+            }
+
+            //Ожидаем закрытия loader'а
+//            $("div.loading-panel").shouldNotBe(visible, Duration.ofSeconds(5));
+//            if (c.getText().equalsIgnoreCase(chipsToClose.getTitle())) {
+//                c.findElement(cssSelector(".filter-reset__icon")).click();
+//                waitLoader();
+//                break;
+//            }
+        }
 
         //6. Добавить все товары на странице в корзину (кнопка Купить)
-//        Thread.sleep(5000);   //Просто подождать 5 секунд до появления кнопок "В корзину"
 
-        //Или
-        //Отключение неявного ожидания
-        Duration d = browser.manage().timeouts().getImplicitWaitTimeout();
-        browser.manage().timeouts().implicitlyWait(Duration.ZERO);
-
-        //Включение явного ожидания появления кнопки "В корзину". Считаем, что все кнопки появляются одновременно
-        WebDriverWait wait = new WebDriverWait(browser, Duration.ofSeconds(15), Duration.ofMillis(100));
-        wait.withMessage("Не дождались инициализации кнопок \"В корзину\"!")
-                .until(ExpectedConditions.stalenessOf(browser.findElement(cssSelector(".btn-tocart.buy-link"))));
-
-        //Включение неявного ожидания
-        browser.manage().timeouts().implicitlyWait(d);
-
+        //Ожидаем закрытия loader'а
+        $("div.loading-panel").shouldNotBe(visible, Duration.ofSeconds(5));
 
         //Получение списка кнопок "В корзину"
-        List<WebElement> buyButtons = browser.findElements(cssSelector(".btn-tocart.buy-link"));
+        ElementsCollection buyButtons = $$(".btn-tocart.buy-link");
 
         //Нажатие всех кнопок "В корзину"
-        for (WebElement element : buyButtons) {
+        for (SelenideElement element : buyButtons) {
             element.click();
         }
 
         //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
-
-        //Просто подождать пока корзина обновится
-//        Thread.sleep(5000);
-
-        //Или явное ожидание.
-        //Но не подойдёт, т.к. мы принудительно дожидаемся когда значение в корзине будет равно требуемому.
-        // А если оно через секунду будет больше?
-//        wait.withMessage("Счётчик товаров в пиктограмме корзины не достиг нужного значения.")
-//                .until(ExpectedConditions.textToBe(cssSelector(".basket-in-cart-a"), String.valueOf(buyButtons.size())));
-
-
-        //Кастомный ExpectedCondition, который ждёт пока значение текста будет неизменно в течении указанного количества
-        // секунд. При использовании задаётся: локатор, период неизменности текста в секундах, sleepDuration, который
-        // указан в wait в миллисекундах.
-        By cartIcon = cssSelector(".basket-in-cart-a");
-        WebElement cart = (WebElement) wait.withMessage("Счётчик товаров в пиктограмме корзины не достиг нужного значения.")
-                .until(new NotChangeTextForXSecond(cartIcon, 3, 100));
-
         //Получение счётчика товаров в корзине
-        int cartCounter = Integer.parseInt((cart).getText());
+//        int cartCounter = Integer.parseInt((cart).getText());
+        int cartCounter = Integer.parseInt($(".basket-in-cart-a").getText());
 
         //Проверка счётчика
         assertEquals(buyButtons.size(), cartCounter);
@@ -315,6 +317,7 @@ public class LabirintUITest {
         } else {
             browser = factory.getDriver(driverType, args);
         }
+        webDriver = browser;
 
         //Сохранение параметров среды в environment.properties
         addEnvParamsToAllure(browser, "Добавление в корзину всех книг по Java (PResolver 1): "
@@ -322,7 +325,7 @@ public class LabirintUITest {
                 + driverType);
 
         //Сохранение драйвера для очистки после завершения тестов
-        openedBrowsers.add(browser);
+//        openedBrowsers.add(browser);
 
         MainPage mainPage = new MainPage(browser);
 
@@ -372,15 +375,11 @@ public class LabirintUITest {
         //Проверка счётчика
         step("Проверить, что счётчик в корзине показывает " + books.size(),
                 () -> {
-                    try {
-                        assertEquals(books.size()+1, cartCounter);
-                    } catch (AssertionFailedError error) {
-//                        getScreenshot(browser);     //Делать скриншот при ошибке в assert
-                        throw error;
-                    }
+                    assertEquals(books.size() + 1, cartCounter);
                 });
     }
 
+    //-----------------------------------------------------------------------------------------------------------
     //Получение скриншота и добавление его в Allure как Attachment
     @Attachment(value = "screen.png", type = "image/png")
     private byte[] getScreenshot(WebDriver driver) {
