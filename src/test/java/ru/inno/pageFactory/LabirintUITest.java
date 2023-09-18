@@ -18,7 +18,6 @@ import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import ru.inno.common.BaseUITest;
@@ -66,7 +65,7 @@ public class LabirintUITest extends BaseUITest {
     }
 
     @AfterEach
-    public void clear() {
+    public void tearDown() {
         for (WebDriver b : openedBrowsers) {
             b.quit();
         }
@@ -203,7 +202,7 @@ public class LabirintUITest extends BaseUITest {
 
             //Проверка счётчика
             assertEquals(buyButtons.size(), cartCounter);
-        } );
+        });
     }
 
     //Закрыть "чипсу"
