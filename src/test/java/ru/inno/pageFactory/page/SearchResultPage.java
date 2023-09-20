@@ -45,9 +45,13 @@ public class SearchResultPage extends Page {
     @Step("Получить все книги")
     public List<BookCard> getAllBooks() {
         List<BookCard> books = new ArrayList<>();
-        for (WebElement e : cards) {
-            books.add(new BookCard(e));
-        }
+
+        cards.forEach(c -> books.add(new BookCard(c)));     //Проверка Stream Api
+
+        //Или
+//        for (WebElement e : cards) {
+//            books.add(new BookCard(e));
+//        }
         return books;
     }
 

@@ -64,7 +64,7 @@ public class LabirintUITest extends BaseUITest {
         }
     }
 
-    @AfterEach
+    @AfterAll
     public void tearDown() {
         for (WebDriver b : openedBrowsers) {
             b.quit();
@@ -249,9 +249,15 @@ public class LabirintUITest extends BaseUITest {
                 .closeChips(Chips.NOT_AVAILABLE)
                 .getAllBooks();
 
-        for (BookCard book : books) {
-            book.addToCart();
-        }
+        books.forEach(BookCard::addToCart);     //Проверка Stream Api
+
+        //Или
+//        books.forEach(b -> b.addToCart());     //Проверка Stream Api
+
+        //Или
+//        for (BookCard book : books) {
+//            book.addToCart();
+//        }
 
         //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
         //Получение счётчика товаров в корзине
@@ -328,7 +334,7 @@ public class LabirintUITest extends BaseUITest {
                 + driverType);
 
         //Сохранение драйвера для очистки после завершения тестов
-//        openedBrowsers.add(browser);
+        openedBrowsers.add(browser);
 
         MainPage mainPage = new MainPage(browser);
 
@@ -423,7 +429,7 @@ public class LabirintUITest extends BaseUITest {
         public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) {
 
             return Stream.of(
-//                    Arguments.of(DriverType.CHROME, new String[]{}),
+                    Arguments.of(DriverType.CHROME, new String[]{}),
                     Arguments.of(DriverType.CHROME, new String[]{"-headless"})
 //                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=800,800", "--window-position=50,50"}),
 //                    Arguments.of(DriverType.CHROME, new String[]{"--window-size=100,1000", "--window-position=100,100"}),

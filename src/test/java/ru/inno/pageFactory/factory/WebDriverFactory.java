@@ -9,6 +9,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 
 import java.time.Duration;
+import java.util.Arrays;
 
 public class WebDriverFactory {
     public WebDriver getDriver(DriverType name) {
@@ -22,23 +23,32 @@ public class WebDriverFactory {
         switch (name) {
             case EDGE -> {
                 EdgeOptions options = new EdgeOptions();
-                for (String s : args) {
-                    options.addArguments(s);
-                }
+                Arrays.stream(args).toList().forEach(options::addArguments);
+
+                //Или
+//                for (String s : args) {
+//                    options.addArguments(s);
+//                }
                 driver = new EdgeDriver(options);
             }
             case CHROME -> {
                 ChromeOptions options = new ChromeOptions();
-                for (String s : args) {
-                    options.addArguments(s);
-                }
+                Arrays.stream(args).toList().forEach(options::addArguments);
+
+                //Или
+//                for (String s : args) {
+//                    options.addArguments(s);
+//                }
                 driver = new ChromeDriver(options);
             }
             case FIREFOX -> {
                 FirefoxOptions options = new FirefoxOptions();
-                for (String s : args) {
-                    options.addArguments(s);
-                }
+                Arrays.stream(args).toList().forEach(options::addArguments);
+
+                //Или
+//                for (String s : args) {
+//                    options.addArguments(s);
+//                }
                 driver = new FirefoxDriver(options);
             }
             default -> throw new RuntimeException("Wrong WebDriver type!");
