@@ -1,9 +1,6 @@
 package ru.inno.pageFactory;
 
-import com.codeborne.selenide.Configuration;
-import com.codeborne.selenide.ElementsCollection;
-import com.codeborne.selenide.SelenideElement;
-import com.codeborne.selenide.WebDriverRunner;
+import com.codeborne.selenide.*;
 import io.github.bonigarcia.seljup.SeleniumJupiter;
 import io.qameta.allure.*;
 import org.junit.jupiter.api.*;
@@ -17,6 +14,7 @@ import org.junitpioneer.jupiter.cartesian.ArgumentSets;
 import org.junitpioneer.jupiter.cartesian.CartesianTest;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -33,8 +31,11 @@ import ru.inno.pageFactory.page.SearchResultPage;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.*;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,7 +66,7 @@ public class LabirintUITest extends BaseUITest {
     }
 
     @AfterAll
-    public void tearDown() {
+    public static void tearDown() {
         for (WebDriver b : openedBrowsers) {
             b.quit();
         }
@@ -512,5 +513,82 @@ public class LabirintUITest extends BaseUITest {
 //                        new String[]{"--window-size=100,1000", "--window-position=100,100"},    //работает только для Chrome
 //                        new String[]{"--start-maximized"}   //Работает только для Chrome
                 );
+    }
+
+
+    @Test
+    @DisplayName("Добавление в корзину всех книг по Java (на PageObject) + Docker (Firefox + PostgreSQL)")
+    public void buyJavaBooksPageObjectDocker() throws MalformedURLException, SQLException {
+
+        WebDriver browser = new RemoteWebDriver(new URL("http://localhost:4444"), new FirefoxOptions());
+        openedBrowsers.add(browser);
+
+        //Установка неявного ожидания для всех команд 4 секунды
+        browser.manage().timeouts().implicitlyWait(Duration.ofSeconds(4));
+
+        MainPage mainPage = new MainPage(browser);
+
+        //1. Открытие страницы
+        //2. Скрыть плашку с cookies
+        mainPage.open();
+
+        //3. В поисковую строку написать `Java`
+        //4. Выполнить поиск
+        SearchResultPage searchResultPage = mainPage.getHeader().search("Java");
+
+        //5. Изменить сортировку с `Сначала релевантные` на `Сначала высокий рейтинг`
+//        searchResultPage.changeSort(SortOption.HIGH_RATE);
+
+        //6. Добавить все товары на странице в корзину (кнопка Купить)
+        //Получение списка кнопок "В корзину"
+        List<BookCard> books = searchResultPage
+                .closeChips(Chips.PREORDER)
+                .closeChips(Chips.AWAITING)
+                .closeChips(Chips.NOT_AVAILABLE)
+                .getAllBooks();
+
+
+
+
+        books.forEach(BookCard::addToCart);     //Проверка Stream Api
+
+        //Сохранение книг в БД, развёрнутой в Docker
+        String connectionString = "jdbc:postgresql://localhost:5432/my-db";
+        String user = "myuser";
+        String password = "mypass";
+        Connection connection = DriverManager.getConnection(connectionString, user, password);
+
+        int counter = 0;
+        for (BookCard b: books) {
+            String insertQuery = "insert into books (\"book_id\", \"book_name\", \"book_price\") values (?,?,?);";
+            PreparedStatement preparedStatement = connection.prepareStatement(insertQuery);
+            preparedStatement.setInt(1, counter);
+            preparedStatement.setString(2, b.getTitle());
+            preparedStatement.setInt(3, b.hashCode());
+            preparedStatement.executeUpdate();
+            counter++;
+        }
+
+        String getAllQuery = "select * from books;";
+        ResultSet resultSet = connection.createStatement().executeQuery(getAllQuery);
+
+        String s = "";
+        while (resultSet.next()) {
+
+            s = resultSet.getInt("book_id") + " " +
+                    resultSet.getString("book_name") + " " +
+                    resultSet.getInt("book_price");
+            System.out.println(s);
+        }
+
+        //7. Счетчик товаров в корзине равен количеству добавленных товаров на шаге 6
+        //Получение счётчика товаров в корзине
+        int cartCounter = searchResultPage
+                .getHeader()
+                .awaitCartCounter()
+                .getCartCounter();
+
+        //Проверка счётчика
+        assertEquals(books.size(), cartCounter);
     }
 }
